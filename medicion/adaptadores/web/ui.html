@@ -1,0 +1,1120 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Medición por visión</title>
+<style>
+:root{--bg:#10151c;--panel:#18202b;--panel2:#1f2937;--borde:#2c3a4d;--txt:#e6edf5;--sub:#9fb0c3;--azul:#3b9cff;--verde:#2fd27a;--rojo:#ff5d5d;--amar:#ffc247;--mag:#ff4fd8}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{display:flex;align-items:center;gap:14px;padding:10px 16px;background:#0b0f14;border-bottom:1px solid var(--borde);position:sticky;top:0;z-index:20;flex-wrap:wrap}
+header h1{font-size:17px;margin:0;font-weight:650}
+header .sub{color:var(--sub);font-size:12px}
+#globales{display:flex;gap:6px;margin-left:auto}
+#vistas{display:flex;gap:6px;flex-wrap:wrap}
+.vbtn{background:var(--panel2);color:var(--txt);border:1px solid var(--borde);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px}
+.vbtn.act{background:var(--azul);border-color:var(--azul);color:#fff}
+#paneles{display:grid;gap:14px;padding:14px;grid-template-columns:repeat(auto-fit,minmax(520px,1fr));align-items:start}
+#paneles.una{grid-template-columns:minmax(0,1fr)}
+.panel{background:var(--panel);border:1px solid var(--borde);border-radius:12px;overflow:hidden;min-width:0}
+.panel.oculto{display:none}
+.cab{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--borde);flex-wrap:wrap}
+.cab .nom{font-weight:650;font-size:15px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{background:var(--panel2);border:1px solid var(--borde);border-radius:999px;padding:2px 9px;font-size:12px;color:var(--sub);white-space:nowrap}
+.chip.ok{color:var(--verde);border-color:#1f6b46}.chip.mal{color:var(--rojo);border-color:#7a2a2a}.chip.av{color:var(--amar);border-color:#7a6224}
+.video{position:relative;background:#000;line-height:0}
+.video img.live,.video canvas.over{width:100%;height:auto;display:block}
+.video canvas.over{position:absolute;left:0;top:0;display:none;cursor:crosshair}
+.video canvas.lupa{position:absolute;right:8px;bottom:8px;width:150px;height:150px;border:2px solid #fff;display:none;image-rendering:pixelated;background:#000}
+.velo{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:rgba(0,0,0,.72);color:#fff;text-align:center;padding:20px;line-height:1.4;z-index:3}
+.velo.on{display:flex}
+.acciones{display:flex;gap:8px;padding:10px 12px;flex-wrap:wrap;border-bottom:1px solid var(--borde)}
+button{font:inherit;color:var(--txt);background:var(--panel2);border:1px solid var(--borde);border-radius:8px;padding:7px 12px;cursor:pointer}
+button:hover{border-color:var(--azul)}
+button.pri{background:var(--azul);border-color:var(--azul);color:#fff;font-weight:600}
+button.verde{background:#1c7c4c;border-color:#1c7c4c;color:#fff}
+button.rojo{background:#8a2f2f;border-color:#8a2f2f;color:#fff}
+button.act{outline:2px solid var(--mag)}
+button:disabled,button.busy{opacity:.5;cursor:wait}
+.tabs{display:flex;gap:2px;padding:8px 10px 0;border-bottom:1px solid var(--borde);flex-wrap:wrap}
+.tab{background:none;border:none;border-bottom:3px solid transparent;border-radius:0;padding:8px 12px;color:var(--sub)}
+.tab.act{color:var(--txt);border-bottom-color:var(--azul)}
+.sec{display:none;padding:12px}
+.sec.act{display:block}
+.card{background:var(--panel2);border:1px solid var(--borde);border-radius:10px;padding:10px 12px;margin-bottom:10px}
+.card h3{margin:0 0 6px;font-size:13px;color:var(--sub);text-transform:uppercase;letter-spacing:.04em}
+.fila{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin:6px 0}
+label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--sub)}
+input[type=number],input[type=text],select{background:#0e141b;color:var(--txt);border:1px solid var(--borde);border-radius:7px;padding:6px 8px;font:inherit;min-width:92px}
+input[type=number]{width:110px}
+input:focus,select:focus{outline:2px solid var(--azul)}
+.ayuda{color:var(--sub);font-size:12.5px;margin:4px 0}
+details{margin:6px 0}summary{cursor:pointer;color:var(--azul);font-size:12.5px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:5px 8px;border-bottom:1px solid var(--borde);text-align:right}
+th:first-child,td:first-child{text-align:left}th{color:var(--sub);font-weight:600}
+.res img{width:100%;border-radius:8px;margin-top:8px;border:1px solid var(--borde)}
+.log{max-height:260px;overflow:auto;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;background:#0b0f14;border:1px solid var(--borde);border-radius:8px;padding:8px}
+.log div{white-space:pre-wrap}.log .t{color:var(--sub)}
+.sw{display:flex;align-items:center;gap:8px;margin:6px 0}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:50;align-items:center;pointer-events:none}
+.toast{background:#0b0f14;border:1px solid var(--borde);border-left:4px solid var(--azul);padding:9px 14px;border-radius:8px;max-width:min(90vw,640px);box-shadow:0 6px 20px rgba(0,0,0,.5)}
+.toast.ok{border-left-color:var(--verde)}.toast.mal{border-left-color:var(--rojo)}
+.nota{color:var(--amar);font-size:12.5px}
+a{color:var(--azul)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Medición por visión</h1>
+  <span class="sub" id="infoSrv">conectando…</span>
+  <div id="globales"><button class="vbtn" id="btnTodasOn">Prender todas</button><button class="vbtn" id="btnTodasOff">Apagar todas</button></div>
+  <div id="vistas"></div>
+</header>
+<main id="paneles"></main>
+<div id="toast"></div>
+<script>
+"use strict";
+var CAMS = {};          // id -> {datos, panel, regla}
+var ORDEN = [];
+var MEDICION = ["medir", "verificar", "regla_toggle", "calibrar_ref", "calibrar_tablero", "lente_pose", "lente_calcular", "fondo_capturar"];
+var VISTA = "todas";
+try { VISTA = localStorage.getItem("vista") || "todas"; } catch (e) {}
+
+/* ---------- utilidades ---------- */
+function $(sel, raiz) { return (raiz || document).querySelector(sel); }
+function $$(sel, raiz) { return Array.prototype.slice.call((raiz || document).querySelectorAll(sel)); }
+function num(x, d) { return (x === null || x === undefined || isNaN(x)) ? "—" : Number(x).toFixed(d === undefined ? 2 : d); }
+function hora(t) { var d = new Date(t * 1000); return d.toTimeString().slice(0, 8); }
+function toast(txt, tipo) {
+  if (!txt) return;
+  var cont = $("#toast"), d = document.createElement("div");
+  d.className = "toast " + (tipo || "");
+  d.textContent = txt;
+  cont.appendChild(d);
+  setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, 6500);
+}
+function setTexto(el, txt) { if (el && el.textContent !== txt) el.textContent = txt; }
+
+async function api(cid, accion, datos) {
+  var ctl = new AbortController();
+  var tm = setTimeout(function () { ctl.abort(); }, 250000);
+  try {
+    var r = await fetch("/api/" + cid + "/" + accion, {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(datos || {}), signal: ctl.signal
+    });
+    return await r.json();
+  } catch (e) {
+    return {ok: false, error: "Sin respuesta del servidor (" + e + ")"};
+  } finally { clearTimeout(tm); }
+}
+
+/* ---------- plantilla de un panel de cámara ---------- */
+var PLANTILLA = `
+<div class="cab"><span class="nom"></span><div class="chips">
+  <span class="chip" data-chip="estado">…</span><span class="chip" data-chip="fps"></span><span class="chip" data-chip="res"></span>
+  <span class="chip" data-chip="escala"></span><span class="chip" data-chip="lente"></span><span class="chip" data-chip="fondo"></span><span class="chip" data-chip="altura"></span><span class="chip av" data-chip="calor" style="display:none"></span><span class="chip" data-chip="seg" style="display:none"></span><span class="chip" data-chip="pieza" style="display:none"></span><span class="chip av" data-chip="ctrl" style="display:none"></span>
+</div></div>
+<div class="video">
+  <img class="live" alt="video">
+  <canvas class="over"></canvas><canvas class="lupa" width="25" height="25"></canvas>
+  <div class="velo"><div class="velo-txt"></div><button class="pri velo-btn" data-accion="reintentar" style="display:none">Reintentar abrir la cámara</button></div>
+</div>
+<div class="acciones">
+  <button data-accion="camara_toggle" class="btn-cam rojo">Apagar cámara</button>
+  <button data-accion="medicion_toggle" class="btn-med verde">Medición: ON</button>
+  <button data-accion="color_toggle" class="btn-color" style="display:none">Imagen: COLOR</button>
+  <button class="pri" data-accion="medir" data-campos="frames">Medir</button>
+  <button class="verde" data-accion="verificar" data-campos="check_largo,check_ancho,frames">Verificar</button>
+  <button data-accion="regla_toggle">Regla</button>
+  <button data-accion="guardar_captura">Guardar imagen</button>
+  <button data-accion="tof_imagen" style="display:none" data-solo="tof">Imagen ToF</button>
+</div>
+<div class="tabs">
+  <button class="tab act" data-tab="medir">Medir</button><button class="tab" data-tab="calibrar">Calibrar</button>
+  <button class="tab" data-tab="altura">Altura</button><button class="tab" data-tab="precision">Precisión</button><button class="tab" data-tab="red">Red neuronal</button><button class="tab" data-tab="piezas">Piezas</button><button class="tab" data-tab="camara">Cámara y resolución</button>
+  <button class="tab" data-tab="registro">Registro</button>
+</div>
+
+<div class="sec act" data-sec="medir">
+  <div class="card"><h3>Medición</h3>
+    <div class="fila">
+      <label>Fotogramas a promediar<input type="number" name="frames" value="15" min="1" max="60" step="1"></label>
+      <label>Pieza patrón: largo (mm)<input type="number" name="check_largo" step="0.01" placeholder="p. ej. 40"></label>
+      <label>ancho (mm)<input type="number" name="check_ancho" step="0.01" placeholder="p. ej. 40"></label>
+    </div>
+    <div class="ayuda"><b>Medir</b> toma varios fotogramas y da la mediana con su desviación (σ). <b>Verificar</b> compara contra tu pieza patrón y te dice el error.
+      Con piezas con grosor, antes captura la <b>altura</b> en su pestaña.</div>
+    <div class="fila"><label class="sw"><input type="checkbox" data-sw="huecos"> Detectar huecos circulares (p. ej. diámetro interior de un sello)</label></div>
+  </div>
+  <div class="card res"><h3>Último resultado <span class="res-msg" style="text-transform:none;letter-spacing:0"></span></h3>
+    <div class="res-vacio ayuda">Todavía no hay mediciones en esta sesión.</div>
+    <table class="res-tabla" style="display:none"><thead><tr><th>#</th><th>Tipo</th><th>Largo</th><th>Ancho</th><th>σ largo</th><th>σ ancho</th><th>n</th></tr></thead><tbody></tbody></table>
+    <img class="res-img" alt="" style="display:none">
+    <div class="ayuda res-pieza" style="white-space:pre-line;font-weight:600"></div>
+    <div class="fila" style="margin-top:8px"><a class="csv-link" target="_blank">Descargar CSV de mediciones</a></div>
+  </div>
+  <div class="card"><h3>Detectado ahora (en vivo)</h3><div class="vivo ayuda">—</div></div>
+</div>
+
+<div class="sec" data-sec="calibrar">
+  <div class="card"><h3>1 · Escala con pieza de referencia</h3>
+    <div class="fila">
+      <label>Medida REAL de la pieza (mm, lado largo)<input type="number" name="ref_mm" step="0.01" placeholder="p. ej. 40"></label>
+      <label>Altura de la pieza (mm, 0 = plana)<input type="number" name="ref_alto_mm" step="0.1" value="0"></label>
+      <button class="pri" data-accion="calibrar_ref" data-campos="ref_mm,ref_alto_mm">Calibrar con la pieza</button>
+    </div>
+    <div class="ayuda">Pon <b>solo</b> la pieza de referencia a la vista. <b>Si el valor no coincide con la medida real, todas las medidas salen escaladas</b>: revisa el chip de escala arriba.</div>
+  </div>
+  <div class="card"><h3>2 · Escala con tablero de ajedrez (corrige perspectiva)</h3>
+    <div class="fila">
+      <label>Esquinas internas (columnas)<input type="number" name="cols" value="9" min="3" max="30"></label>
+      <label>(filas)<input type="number" name="filas" value="6" min="3" max="30"></label>
+      <label>Lado de cada cuadro (mm)<input type="number" name="lado_mm" step="0.01" value="25"></label>
+      <button class="pri" data-accion="calibrar_tablero" data-campos="cols,filas,lado_mm">Calibrar con el tablero</button>
+    </div>
+    <div class="ayuda">El tablero va <b>plano sobre la mesa</b>, completo a la vista y con borde blanco. Un tablero 10×7 cuadros tiene 9×6 esquinas internas.</div>
+  </div>
+  <div class="card"><h3>3 · Lente (corrige distorsión) — opcional</h3>
+    <div class="fila">
+      <button data-accion="lente_pose" data-campos="cols,filas,lado_mm">Capturar pose</button>
+      <button class="verde" data-accion="lente_calcular">Calcular lente</button>
+      <button data-accion="lente_reiniciar">Descartar poses</button>
+      <span class="chip lente-poses">poses 0/12</span>
+    </div>
+    <div class="ayuda">Muestra el tablero en ~12 posturas distintas e inclinadas (mueve y gira el tablero entre capturas). Al calcular, repite la calibración de escala.
+      <details><summary>¿Cuándo hace falta?</summary>Si las líneas rectas se ven curvas hacia los bordes, o quieres que la distancia lente-mesa salga sola del tablero.</details></div>
+  </div>
+  <div class="card"><h3>4 · Fondo</h3>
+    <div class="fila">
+      <button data-accion="fondo_capturar">Capturar fondo vacío</button>
+      <button data-accion="fondo_olvidar">Fondo automático</button>
+    </div>
+    <div class="ayuda">Normalmente no hace falta: el fondo se ajusta solo. Úsalo si la mesa no es uniforme: quita <b>todo</b> de la mesa y pulsa el botón. Si cambias la exposición, se descarta.</div>
+  </div>
+</div>
+
+<div class="sec" data-sec="altura">
+  <div class="card"><h3>Corrección por altura de la pieza</h3>
+    <div class="fila">
+      <label>Altura de la pieza a medir (mm)<input type="number" name="altura_mm" step="0.1" value="0"></label>
+      <button class="pri" data-accion="altura" data-campos="altura_mm">Aplicar</button>
+    </div>
+    <div class="fila">
+      <label>Distancia lente → mesa (mm)<input type="number" name="cam_dist_mm" step="1" placeholder="auto"></label>
+      <button class="pri" data-accion="distancia" data-campos="cam_dist_mm">Fijar</button>
+      <button data-accion="distancia" data-fijo='{"auto":true}'>Automática</button>
+    </div>
+    <div class="fila">
+      <button class="rojo" data-accion="altura" data-fijo='{"altura_mm":0}'>Quitar la corrección (altura 0)</button>
+      <label class="sw"><input type="checkbox" data-sw="silueta"> Dibujar la silueta visible (cian punteada) junto a la huella corregida (verde)</label>
+    </div>
+    <div class="ayuda">Una pieza alta se ve más grande y su silueta incluye las paredes: este ajuste reconstruye la huella real, también según <b>dónde</b> la coloques.
+      Mide la distancia con regla (lo más fiable) o calibra la lente y el tablero para que salga sola. Un error del 4% en esa distancia mueve la medida ~0.3 mm.
+      <b>Ojo:</b> con la corrección activa el rectángulo <b>verde no es el borde que ves</b> sino la huella real, calculada hacia el centro de la imagen; la silueta visible va en cian. Si la pieza es plana, pon altura 0.</div>
+    <div class="ayuda altura-estado">—</div>
+  </div>
+</div>
+
+<div class="sec" data-sec="precision">
+  <div class="card"><h3>Calibrar contra piezas patrón (corrige escala y desfase de bordes)</h3>
+    <div class="fila">
+      <label>Medida REAL: lado largo (mm)<input type="number" name="pat_largo" step="0.001" placeholder="p. ej. 60"></label>
+      <label>lado corto (mm, opcional)<input type="number" name="pat_ancho" step="0.001" placeholder="p. ej. 35"></label>
+      <button class="pri" data-accion="patron_capturar" data-campos="pat_largo,pat_ancho,frames">Capturar patrón</button>
+      <button class="verde" data-accion="patron_calcular">Calcular corrección</button>
+      <button data-accion="patron_reiniciar">Descartar patrones</button>
+      <button class="rojo" data-accion="corr_quitar">Quitar corrección</button>
+    </div>
+    <div class="ayuda"><b>1)</b> Necesitas piezas de medida REAL conocida (bloques patrón, pines calibrados, o piezas medidas con calibrador o micrómetro): <b>su incertidumbre limita la tuya</b>.
+      <b>2)</b> Usa al menos 2 piezas de tamaño distinto (ideal: una chica, una mediana y una grande de tu rango). <b>3)</b> Pon cada una sola a la vista, escribe su medida real y pulsa Capturar.
+      <b>4)</b> Pulsa Calcular. Se guarda con la calibración y se borra si recalibras la escala. Calibra primero la escala y espera el calentamiento.</div>
+    <div class="ayuda corr-estado" style="font-weight:600">—</div>
+    <div class="ayuda patrones-lista" style="white-space:pre-line"></div>
+  </div>
+  <div class="card"><h3>Distancia lente → mesa con una pieza patrón alta</h3>
+    <div class="fila">
+      <label>Medida REAL: lado largo (mm)<input type="number" name="dist_largo" step="0.001"></label>
+      <label>lado corto (mm, opcional)<input type="number" name="dist_ancho" step="0.001"></label>
+      <label>Altura de la pieza (mm)<input type="number" name="dist_altura" step="0.01"></label>
+      <button class="pri" data-accion="distancia_calibrar" data-campos="dist_largo,dist_ancho,dist_altura">Calibrar distancia</button>
+    </div>
+    <div class="ayuda">La corrección por altura depende de la distancia lente-mesa. En vez de medirla con regla, pon una pieza alta de medida y altura conocidas (calibra la escala antes con la pieza plana):
+      el sistema busca la distancia que la hace salir con su medida real. Usa la altura medida con calibrador.</div>
+  </div>
+  <div class="card"><h3>Prueba de precisión (repetibilidad y sesgo)</h3>
+    <div class="fila">
+      <label>Medida REAL: lado largo (mm)<input type="number" name="pr_largo" step="0.001"></label>
+      <label>lado corto (mm, opcional)<input type="number" name="pr_ancho" step="0.001"></label>
+      <label>Tolerancia ± (mm)<input type="number" name="pr_tol" step="0.001" placeholder="p. ej. 0.1"></label>
+      <button class="pri" data-accion="prueba_iniciar" data-campos="pr_largo,pr_ancho,pr_tol">Iniciar prueba</button>
+      <button data-accion="prueba_reiniciar">Borrar mediciones</button>
+      <button data-accion="prueba_detener">Terminar prueba</button>
+    </div>
+    <div class="ayuda">Con la prueba iniciada, pulsa <b>Medir</b> 10 a 20 veces <b>recolocando la pieza</b> entre mediciones (y en distintas posiciones). Aquí abajo verás el sesgo (qué tanto se aleja de la medida real)
+      y la dispersión (qué tanto varía). Con tolerancia, se calcula si el sistema es apto: la dispersión debe ser menos del 10% de la banda de tolerancia.</div>
+    <div class="ayuda prueba-res" style="white-space:pre-line">Prueba no iniciada.</div>
+  </div>
+</div>
+
+<div class="sec" data-sec="red">
+  <div class="card"><h3>Red neuronal de segmentación (opcional)</h3>
+    <div class="fila">
+      <button class="verde red-toggle" data-accion="red_toggle" data-campos="red_modelo,red_modo,red_umbral,red_margen,red_cada" style="font-size:15px;padding:10px 20px">Encender red</button>
+      <span class="chip red-chip">apagada (método clásico)</span>
+      <span class="ayuda red-datos"></span>
+    </div>
+    <div class="nota red-aviso"></div>
+    <div class="fila">
+      <label>Modelo (.onnx en la carpeta del programa)<select name="red_modelo"></select></label>
+      <button data-accion="seg_descargar" class="red-descargar">Descargar u2netp (4.7 MB)</button>
+    </div>
+    <div class="fila">
+      <label>Modo<select name="red_modo"><option value="restringir">restringir (recomendado)</option><option value="rescatar">rescatar (poco contraste)</option></select></label>
+      <label>Umbral de la red (0.05 – 0.95)<input type="number" name="red_umbral" step="0.05" min="0.05" max="0.95"></label>
+      <label>Margen alrededor de la pieza (px)<input type="number" name="red_margen" step="1" min="0" max="60"></label>
+      <label>Ejecutar la red cada N fotogramas<input type="number" name="red_cada" step="1" min="1"></label>
+      <button class="pri" data-accion="seg_configurar" data-campos="red_modelo,red_modo,red_umbral,red_margen,red_cada">Aplicar ajustes</button>
+    </div>
+    <div class="ayuda">La red <b>propone</b> dónde está la pieza y el método clásico <b>afina el borde</b>: la precisión de la medida sigue siendo la del método clásico.
+      Cada cámara tiene su propia red: enciéndela en la que quieras probar. Si cambias el modelo con la red encendida, se recarga sola.</div>
+  </div>
+  <div class="card"><h3>Comparar con y sin red (sobre una misma imagen)</h3>
+    <div class="fila"><button class="pri" data-accion="seg_comparar">Comparar ahora</button></div>
+    <div class="ayuda">Pon tu pieza (y, si quieres, sombras o reflejos) a la vista y pulsa el botón: verás cuántos objetos detecta cada variante, su medida y cuánto tarda.
+      Es la forma más rápida de saber si la red te ayuda. Para precisión, sigue siendo mejor la <b>Prueba de precisión</b> de la pestaña Precisión, con la red encendida y apagada.</div>
+    <div class="ayuda red-comparacion" style="white-space:pre-line">Sin comparaciones todavía.</div>
+  </div>
+  <div class="card"><h3>Cómo usarla bien</h3>
+    <div class="ayuda" style="line-height:1.7">
+      • <b>Una pieza a la vez.</b> Con varias piezas en la mesa puede descartar las pequeñas (en las pruebas perdió una de 16×10 mm).<br>
+      • <b>Modo restringir (recomendado).</b> Quita sombras y reflejos que el método clásico detectaría como objetos. La medida sale igual de precisa.<br>
+      • <b>Modo rescatar.</b> Sirve si la pieza tiene muy poco contraste y el método clásico no la ve. Es menos preciso (~0.2 mm en las pruebas).<br>
+      • <b>Apagarla:</b> el botón de arriba; vuelve al método clásico al instante.<br>
+      • <b>Si va lenta:</b> sube «Ejecutar la red cada N fotogramas» o baja «Detecciones/s en vivo» en la pestaña Cámara y resolución. No he medido su tiempo en tu Pi (en mi equipo tardó 1.3 s por ejecución).<br>
+      • <b>Si la red falla</b> estando encendida, se apaga sola y la medición sigue con el método clásico.<br>
+      • <b>Al reiniciar el programa</b> la red vuelve a estar apagada; para dejarla encendida al arrancar usa <code>--segmentador onnx</code>.</div>
+  </div>
+</div>
+
+<div class="sec" data-sec="piezas">
+  <div class="card"><h3>Reconocer la pieza</h3>
+    <div class="fila">
+      <label class="sw"><input type="checkbox" data-sw="reco_vivo"> Reconocer en vivo</label>
+      <label>Descriptor<select name="pz_modo"><option value="geometrico">geométrico (forma, huecos, tamaño, apariencia)</option><option value="cnn">red neuronal</option><option value="ambos">ambos (más estricto)</option></select></label>
+      <button data-accion="pieza_identificar">Identificar ahora</button>
+    </div>
+    <div class="fila"><label class="sw"><input type="checkbox" data-sw="reco_auto"> Cargar la receta automáticamente al reconocer (3 lecturas iguales)</label></div>
+    <div class="ayuda pz-reco" style="white-space:pre-line;font-weight:600">Reconocimiento apagado: actívalo arriba o pulsa «Identificar ahora».</div>
+    <div class="ayuda">La <b>receta</b> carga la altura y la medida de verificación de la pieza; <b>nunca la escala</b> (esa depende del montaje y de la cámara, no de la pieza). Si la pieza no se parece a ninguna enseñada, dice «desconocida» y no carga nada.</div>
+  </div>
+  <div class="card"><h3>Biblioteca de piezas</h3>
+    <div class="pz-lista"></div>
+    <div class="ayuda pz-sel" style="font-weight:600">Ninguna pieza seleccionada: llena el formulario y pulsa «Guardar pieza nueva».</div>
+    <div class="fila">
+      <label>Nombre<input type="text" name="pz_nombre" style="width:190px"></label>
+      <label>Largo nominal (mm)<input type="number" name="pz_largo" step="0.001"></label>
+      <label>Ancho nominal (mm)<input type="number" name="pz_ancho" step="0.001"></label>
+      <label>o Diámetro (mm)<input type="number" name="pz_diametro" step="0.001"></label>
+      <label>Tolerancia ± (mm)<input type="number" name="pz_tol" step="0.001"></label>
+      <label>Altura (mm)<input type="number" name="pz_altura" step="0.01"></label>
+    </div>
+    <div class="fila">
+      <label>Notas<input type="text" name="pz_notas" style="width:300px"></label>
+      <label class="sw"><input type="checkbox" name="pz_maestra"> Es una pieza MAESTRA (certificada, no se usa en producción)</label>
+    </div>
+    <div class="fila">
+      <button class="pri" data-accion="pieza_guardar_nueva">Guardar pieza nueva</button>
+      <button class="verde" data-accion="pieza_guardar_cambios">Guardar cambios</button>
+      <button data-accion="pieza_receta_sel">Cargar receta ahora</button>
+      <button class="rojo" data-accion="pieza_eliminar_sel" data-confirmar="¿Seguro? Pulsa otra vez">Eliminar pieza</button>
+    </div>
+    <div class="ayuda">Las medidas nominales deben ser las <b>correctas</b> (de plano o medidas con un instrumento certificado). El veredicto compara tu medida contra ellas: <b>OK</b> si el error es ≤ 80 % de la tolerancia, <b>LÍMITE</b> si ≤ la tolerancia, <b>NO OK</b> si la supera.</div>
+  </div>
+  <div class="card"><h3>Enseñar la pieza seleccionada a ESTA cámara</h3>
+    <div class="fila">
+      <label>Muestras<input type="number" name="pz_n" value="20" min="3" max="200"></label>
+      <label>Segundos entre muestras<input type="number" name="pz_int" value="0.6" step="0.1" min="0.1"></label>
+      <button class="pri" data-accion="pieza_ensenar_sel">Empezar a enseñar</button>
+      <button data-accion="pieza_cancelar">Cancelar</button>
+      <button class="rojo" data-accion="pieza_borrar_muestras_sel" data-confirmar="¿Seguro? Pulsa otra vez">Borrar sus muestras (esta cámara)</button>
+    </div>
+    <div class="ayuda pz-ens" style="white-space:pre-line;font-weight:600"></div>
+    <div class="ayuda">Deja <b>solo esa pieza</b> en la mesa, con la luz y la cámara como trabajarás. Mientras captura, <b>muévela y gírala</b> (posiciones y ángulos distintos, lejos de los bordes). Cada cámara aprende por separado, porque la OPT y la HQ ven distinto. Mínimo 5 muestras; se recomiendan 15 a 30. El video no se detiene.</div>
+  </div>
+  <div class="card"><h3>Evaluar qué tan bien distingue las piezas</h3>
+    <div class="fila"><button class="pri" data-accion="pieza_evaluar">Evaluar biblioteca</button></div>
+    <div class="ayuda pz-eval" style="white-space:pre-line">Sin evaluación todavía.</div>
+    <div class="ayuda">Prueba cada muestra contra las demás (dejar-una-fuera) y avisa qué piezas se pueden confundir y cuáles necesitan más muestras. Es la prueba de que el reconocimiento es confiable <b>antes</b> de usarlo con piezas reales.</div>
+  </div>
+  <div class="card"><h3>Pieza maestra y control de la calibración</h3>
+    <div class="fila">
+      <button class="pri" data-accion="maestra_verificar">Verificar con la pieza maestra</button>
+      <label>Controlar cada (horas)<input type="number" name="pz_cada" step="0.5" value="8" min="0.5"></label>
+      <button data-accion="pz_cada_aplicar">Aplicar</button>
+    </div>
+    <div class="ayuda pz-ctrl" style="white-space:pre-line">Sin controles todavía.</div>
+    <div class="ayuda">Marca una pieza como <b>maestra</b> (certificada y que no se use en producción), ponla sola a la vista y pulsa el botón: se mide y se compara con su nominal. Si se aleja, tu calibración se movió y hay que recalibrar. Así recalibras <b>solo cuando hace falta</b>. Los controles quedan en el historial.</div>
+  </div>
+  <div class="card"><h3>Red neuronal para las huellas (opcional)</h3>
+    <div class="fila">
+      <label>Modelo .onnx (en la carpeta del programa)<select name="pz_cnn_modelo"></select></label>
+      <button class="verde pz-cnn-toggle" data-accion="cnn_toggle">Encender red de huellas</button>
+      <span class="chip pz-cnn-chip">apagada</span>
+    </div>
+    <div class="nota pz-cnn-aviso"></div>
+    <div class="ayuda">Sin red, el reconocimiento usa solo la huella <b>geométrica</b> (forma, huecos, tamaño y apariencia): funciona sin descargar nada. Con una red de imágenes (p. ej. <b>MobileNetV3-Small</b> en ONNX, entrada 224×224) la huella incluye cómo se ve la pieza, y el modo «ambos» exige que las dos coincidan. Copia el .onnx a la carpeta del programa, enciéndela y <b>vuelve a enseñar</b> las piezas (las ya enseñadas no tienen huella de red). Todavía no probé una MobileNet real: valídala con «Evaluar».</div>
+  </div>
+  <div class="card"><h3>Respaldo de la biblioteca</h3>
+    <div class="fila">
+      <a class="vbtn" href="/api/piezas/exportar" style="text-decoration:none;display:inline-block" download>Descargar biblioteca (.zip)</a>
+      <label>Cargar un respaldo<input type="file" accept=".zip" class="pz-archivo"></label>
+      <button data-accion="pz_importar">Importar</button>
+    </div>
+    <div class="ayuda">El .zip trae las fichas, las muestras de todas las cámaras y los controles. Importar <b>fusiona</b> (no borra lo que ya tienes). Úsalo para copiar la biblioteca a otra Pi o guardar una copia.</div>
+  </div>
+  <div class="card"><h3>Cómo usarlo, paso a paso</h3>
+    <div class="ayuda" style="line-height:1.7">
+      <b>1.</b> Crea la ficha de cada pieza (nombre, medida nominal, tolerancia, altura). <b>2.</b> Selecciónala en la lista y pulsa «Empezar a enseñar»: muévela y gírala mientras captura.
+      <b>3.</b> Repite con cada pieza y con cada cámara que vayas a usar. <b>4.</b> Pulsa «Evaluar biblioteca» y corrige lo que avise. <b>5.</b> Activa «Reconocer en vivo»: al poner una pieza conocida verás su nombre y, al pulsar <b>Medir</b>, el veredicto OK / LÍMITE / NO OK.<br>
+      <b>Importante:</b> reconocer una pieza no mide ni calibra la escala, y no distingue variantes casi iguales (la diferencia debe ser mayor que ~7 % en tamaño o notoria en forma): esas se separan midiendo. Si la calibración se mueve, el control con la pieza maestra te lo avisa.</div>
+  </div>
+</div>
+
+<div class="sec" data-sec="camara">
+  <div class="card"><h3>Resolución (se aplica en caliente)</h3>
+    <div class="ayuda res-info">—</div>
+    <div class="fila res-gige" style="display:none">
+      <button data-accion="resolucion" data-fijo='{"delta":-1}' data-rel="1">◀</button>
+      <label>Preajuste<select name="res_sel"></select></label>
+      <button data-accion="resolucion" data-fijo='{"delta":1}' data-rel="1">▶</button>
+      <button class="pri" data-accion="resolucion" data-campos="res_sel">Aplicar</button>
+    </div>
+    <div class="fila res-gige" style="display:none">
+      <label>ROI personalizado (px, 0 = sensor completo)<input type="number" name="res_roi" step="16" min="0" placeholder="2048"></label>
+      <label>Reducir ÷N para procesar<input type="number" name="res_esc" step="1" min="1" value="1"></label>
+      <button data-accion="resolucion" data-campos="res_roi,res_esc">Aplicar personalizada</button>
+    </div>
+    <div class="fila res-csi" style="display:none">
+      <label>Modo nativo del sensor<select name="res_modo"></select></label>
+      <button class="pri" data-accion="resolucion" data-campos="res_modo">Aplicar</button>
+    </div>
+    <div class="ayuda">Cada resolución guarda su <b>propia calibración</b>; sin lente, la escala y el tablero se <b>convierten solos</b> entre resoluciones. Con lente calibrada hay que calibrarla en cada una.
+      Con ROI grande y reducción (p. ej. 5120 ÷4) la Pi busca la pieza rápido y refina los bordes en la imagen completa.</div>
+    <div class="nota res-aviso"></div>
+  </div>
+  <div class="card exp-card"><h3>Exposición y ganancia</h3>
+    <div class="fila">
+      <label>Exposición (µs)<input type="number" name="exposicion" step="100"></label>
+      <button data-accion="exposicion" data-campos="exposicion">Aplicar</button>
+      <label>Ganancia<input type="number" name="ganancia" step="0.5"></label>
+      <button data-accion="ganancia" data-campos="ganancia">Aplicar</button>
+    </div>
+    <div class="ayuda exp-lim"></div>
+    <div class="ayuda">Quedan <b>fijas</b> para que las medidas no cambien entre fotogramas. Si las cambias, recalibra el fondo capturado.</div>
+  </div>
+  <div class="card"><h3>Video y rendimiento</h3>
+    <div class="fila">
+      <label>Ancho del video (px)<input type="number" name="vista_ancho" step="40"></label>
+      <label>Calidad JPEG<input type="number" name="vista_calidad" min="20" max="95"></label>
+      <label>Cuadros/s del video<input type="number" name="vista_fps" step="1" min="1" max="30"></label>
+      <label>Detecciones/s en vivo<input type="number" name="tasa" step="0.5" min="0.2" max="30"></label>
+      <button class="pri" data-accion="vista" data-campos="vista_ancho,vista_calidad,vista_fps,tasa">Aplicar</button>
+    </div>
+    <div class="sw"><input type="checkbox" data-sw="hires_vivo"> Refinar bordes a resolución completa también en vivo (más lento)</div>
+    <div class="ayuda">Si usas las dos cámaras a la vez y la Pi va lenta, baja las detecciones/s o el ancho del video: <b>medir</b> siempre usa la mejor calidad.</div>
+  </div>
+</div>
+
+<div class="sec" data-sec="registro"><div class="log"></div></div>
+`;
+
+/* ---------- construcción / enlace de paneles ---------- */
+function crearPanel(cid) {
+  var p = document.createElement("section");
+  p.className = "panel";
+  p.dataset.cid = cid;
+  p.innerHTML = PLANTILLA;
+  $(".csv-link", p).href = "/api/csv/" + cid;
+  // pestañas
+  $$(".tab", p).forEach(function (b) {
+    b.addEventListener("click", function () {
+      $$(".tab", p).forEach(function (x) { x.classList.toggle("act", x === b); });
+      $$(".sec", p).forEach(function (s) { s.classList.toggle("act", s.dataset.sec === b.dataset.tab); });
+    });
+  });
+  // marcar campos editados para no pisarlos con el estado del servidor
+  $$("input[name],select[name]", p).forEach(function (i) {
+    i.addEventListener("input", function () { i.dataset.sucio = "1"; });
+    i.addEventListener("change", function () { i.dataset.sucio = "1"; });
+  });
+  // botones de acción
+  $$("button[data-accion]", p).forEach(function (b) {
+    b.addEventListener("click", function () { alPulsar(cid, b); });
+  });
+  // interruptores
+  $$("input[data-sw]", p).forEach(function (c) {
+    c.addEventListener("change", async function () {
+      var sw = c.dataset.sw, cuerpo = {on: c.checked};
+      if (sw === "reco_vivo") { sw = "reco_config"; cuerpo = {vivo: c.checked}; }
+      else if (sw === "reco_auto") { sw = "reco_config"; cuerpo = {auto: c.checked}; }
+      var r = await api(cid, sw, cuerpo);
+      toast(r.mensaje || r.error, r.ok === false ? "mal" : "ok");
+    });
+  });
+  var pzm = $('[name="pz_modo"]', p);
+  if (pzm) pzm.addEventListener("change", async function () {
+    var r = await api(cid, "reco_config", {modo: pzm.value}); pzm.dataset.sucio = "";
+    toast(r.mensaje || r.error, r.ok === false ? "mal" : "ok");
+  });
+  $(".live", p).src = "/stream/" + cid + ".mjpg";
+  prepararRegla(cid, p);
+  return p;
+}
+
+function leerCampos(p, nombres) {
+  var d = {};
+  (nombres || "").split(",").forEach(function (n) {
+    n = n.trim(); if (!n) return;
+    var i = $('[name="' + n + '"]', p);
+    if (!i) return;
+    d[n] = (i.type === "number") ? (i.value === "" ? null : Number(i.value)) : i.value;
+  });
+  return d;
+}
+
+async function alPulsar(cid, b) {
+  var c = CAMS[cid], p = c.panel, acc = b.dataset.accion;
+  if (acc === "regla_toggle") { alternarRegla(cid); return; }
+  var datos = leerCampos(p, b.dataset.campos);
+  if (b.dataset.fijo) { var f = JSON.parse(b.dataset.fijo); for (var k in f) datos[k] = f[k]; }
+  // casos especiales que traducen los campos al formato de la API
+  if (acc === "resolucion") {
+    var rs = c.datos && c.datos.resoluciones;
+    if (!rs) { toast("Esta cámara no permite cambiar la resolución", "mal"); return; }
+    if (rs.tipo === "gige") {
+      if (datos.delta) { var n = rs.lista.length; datos = {indice: (rs.actual + datos.delta + n) % n}; }
+      else if (datos.res_sel !== undefined) datos = {indice: Number(datos.res_sel)};
+      else datos = {roi: Number(datos.res_roi || 0), escala: Number(datos.res_esc || 1)};
+    } else {
+      var partes = String(datos.res_modo).split("x");
+      datos = {w: Number(partes[0]), h: Number(partes[1])};
+    }
+  }
+  if (acc === "verificar") datos = {largo: datos.check_largo, ancho: datos.check_ancho, frames: datos.frames};
+  if (acc === "patron_capturar") datos = {real_largo: datos.pat_largo, real_ancho: datos.pat_ancho, frames: datos.frames};
+  if (acc === "distancia_calibrar") datos = {real_largo: datos.dist_largo, real_ancho: datos.dist_ancho, altura_mm: datos.dist_altura};
+  if (acc === "prueba_iniciar") datos = {real_largo: datos.pr_largo, real_ancho: datos.pr_ancho, tol: datos.pr_tol};
+  if (acc === "red_toggle") { var redOn = !!(c.datos && c.datos.red && c.datos.red.activa); acc = redOn ? "seg_apagar" : "seg_encender"; datos = redOn ? {} : redCampos(datos); }
+  if (acc === "seg_configurar") datos = redCampos(datos);
+  if (acc === "pz_importar") { importarBiblioteca(cid, p, b); return; }
+  if (acc.indexOf("pieza_") === 0 || acc === "pz_cada_aplicar" || acc === "cnn_toggle" || acc === "maestra_verificar") {
+    var mp = mapearPieza(cid, c, p, acc, b);
+    if (!mp) return;
+    acc = mp.acc; datos = mp.datos;
+  }
+  if (acc === "vista") datos = {ancho: datos.vista_ancho, calidad: datos.vista_calidad, fps: datos.vista_fps, tasa: datos.tasa};
+  if (acc === "guardar_captura" || acc === "tof_imagen" || acc === "reintentar") datos = {};
+  if (acc === "camara_toggle") { acc = "camara"; datos = {on: !(c.datos && c.datos.encendida !== false)}; }
+  if (acc === "medicion_toggle") { acc = "medicion"; datos = {on: !(c.datos && c.datos.medicion)}; }
+  if (acc === "color_toggle") { acc = "color"; datos = {gris: !(c.datos && c.datos.gris)}; }
+  b.classList.add("busy"); b.disabled = true;
+  var r = await api(cid, acc, datos);
+  b.classList.remove("busy"); b.disabled = false;
+  $$("input[name],select[name]", p).forEach(function (i) {
+    if ((b.dataset.campos || "").split(",").indexOf(i.name) >= 0) i.dataset.sucio = "";
+  });
+  if (r.ok === false) toast(r.error || r.mensaje || "No se pudo completar", "mal");
+  else {
+    if (acc === "guardar_captura" && r.url) { toast(r.mensaje + " — se abre en otra pestaña", "ok"); window.open(r.url, "_blank"); }
+    else toast(r.mensaje || (r.resultado && r.resultado.mensaje) || "Hecho", "ok");
+  }
+  if (acc === "pieza_guardar" && r.id) seleccionarPieza(cid, r.id);
+  if (acc === "pieza_eliminar" && r.ok !== false) { c.pzSel = null; c.pzFormaId = null; }
+  if (r.evaluacion) setTexto($(".pz-eval", p), textoEval(r.evaluacion));
+  if (r.resultado) mostrarResultado(cid, r.resultado);
+  if (r.comparacion) { var cmpEl = $(".red-comparacion", p); cmpEl.dataset.t = String(r.comparacion.t); setTexto(cmpEl, textoComparacion(r.comparacion)); }
+  refrescar();
+}
+
+/* ---------- resultado de medición ---------- */
+function mostrarResultado(cid, res) {
+  var p = CAMS[cid].panel, tb = $(".res-tabla tbody", p);
+  CAMS[cid].ultimoRes = res.t;
+  tb.innerHTML = "";
+  res.filas.forEach(function (f, i) {
+    var tr = document.createElement("tr");
+    var celdas = [String(i + 1), f.tipo, num(f.largo, 3) + " " + res.unidad, f.tipo === "circulo" || f.tipo === "hueco" ? "—" : num(f.ancho, 3) + " " + res.unidad,
+                  num(f.std_l, 3), f.tipo === "circulo" || f.tipo === "hueco" ? "—" : num(f.std_a, 3), String(f.n)];
+    celdas.forEach(function (t) { var td = document.createElement("td"); td.textContent = t; tr.appendChild(td); });
+    tb.appendChild(tr);
+  });
+  $(".res-tabla", p).style.display = "table";
+  $(".res-vacio", p).style.display = "none";
+  setTexto($(".res-msg", p), "— " + (res.mensaje || "") + " (" + hora(res.t) + ")");
+  setTexto($(".res-pieza", p), res.pieza ? textoPiezaResultado(res.pieza) : "");
+  var im = $(".res-img", p);
+  im.style.display = "block";
+  im.src = "/resultado/" + cid + ".jpg?t=" + Math.round(res.t * 1000);
+}
+
+/* ---------- regla punto a punto ---------- */
+function prepararRegla(cid, p) {
+  var canvas = $("canvas.over", p), lupa = $("canvas.lupa", p);
+  var c = CAMS[cid];
+  c.regla = {activa: false, p1: null, cur: null, medidas: [], img: null, vivo: "", pend: false, t: 0};
+  function aPunto(ev) {
+    var r = canvas.getBoundingClientRect();
+    return [(ev.clientX - r.left) * canvas.width / r.width, (ev.clientY - r.top) * canvas.height / r.height];
+  }
+  canvas.addEventListener("mousemove", async function (ev) {
+    var g = c.regla; if (!g.activa) return;
+    g.cur = aPunto(ev); dibujarRegla(cid);
+    if (g.p1 && !g.pend && Date.now() - g.t > 70) {
+      g.pend = true; g.t = Date.now();
+      var r = await api(cid, "regla", {p1: g.p1, p2: g.cur});
+      g.pend = false; if (r.ok) { g.vivo = num(r.d, 2) + " " + r.unidad; dibujarRegla(cid); }
+    }
+  });
+  canvas.addEventListener("click", async function (ev) {
+    var g = c.regla; if (!g.activa) return;
+    var pt = aPunto(ev);
+    if (!g.p1) { g.p1 = pt; g.vivo = ""; }
+    else {
+      var r = await api(cid, "regla", {p1: g.p1, p2: pt, guardar: true});
+      if (r.ok) { g.medidas.push({a: g.p1, b: pt, txt: num(r.d, 2) + " " + r.unidad}); toast("Distancia: " + num(r.d, 3) + " " + r.unidad + " (dx " + num(r.dx, 2) + ", dy " + num(r.dy, 2) + ")", "ok"); }
+      else toast(r.error || "No se pudo medir", "mal");
+      g.p1 = null; g.vivo = "";
+    }
+    dibujarRegla(cid);
+  });
+  canvas.addEventListener("contextmenu", function (ev) {
+    ev.preventDefault(); var g = c.regla;
+    if (g.p1) g.p1 = null; else g.medidas.pop();
+    dibujarRegla(cid);
+  });
+  canvas.addEventListener("mouseleave", function () { lupa.style.display = "none"; });
+  // botones propios de la regla (se crean al activarla)
+}
+
+async function alternarRegla(cid) {
+  var c = CAMS[cid], g = c.regla, p = c.panel;
+  var btn = $('button[data-accion="regla_toggle"]', p);
+  if (g.activa) { cerrarRegla(cid); return; }
+  var img = new Image();
+  img.onload = function () {
+    var cv = $("canvas.over", p);
+    cv.width = img.naturalWidth; cv.height = img.naturalHeight;
+    g.img = img; g.activa = true; g.p1 = null; g.cur = null; g.medidas = []; g.vivo = "";
+    cv.style.display = "block"; $(".live", p).style.visibility = "hidden";
+    btn.classList.add("act"); btn.textContent = "Salir de la regla";
+    toast("Regla: clic en el punto 1 y luego en el punto 2. Clic derecho = deshacer. Se guarda en el CSV.", "ok");
+    dibujarRegla(cid);
+  };
+  img.onerror = function () { toast("No hay imagen disponible para la regla", "mal"); };
+  img.src = "/snapshot/" + cid + ".jpg?t=" + Date.now();
+}
+
+function cerrarRegla(cid) {
+  var c = CAMS[cid], g = c.regla, p = c.panel;
+  g.activa = false;
+  $("canvas.over", p).style.display = "none"; $("canvas.lupa", p).style.display = "none";
+  $(".live", p).style.visibility = "visible";
+  var btn = $('button[data-accion="regla_toggle"]', p);
+  btn.classList.remove("act"); btn.textContent = "Regla";
+}
+
+function dibujarRegla(cid) {
+  var c = CAMS[cid], g = c.regla, p = c.panel, cv = $("canvas.over", p);
+  var ctx = cv.getContext && cv.getContext("2d");
+  if (!ctx || !g.img) return;
+  ctx.drawImage(g.img, 0, 0);
+  var esc = Math.max(1, cv.width / 900);
+  ctx.lineWidth = 2 * esc; ctx.font = (15 * esc) + "px sans-serif"; ctx.textBaseline = "bottom";
+  function linea(a, b, col, txt) {
+    ctx.strokeStyle = col; ctx.fillStyle = col;
+    ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+    ctx.beginPath(); ctx.arc(a[0], a[1], 4 * esc, 0, 6.2832); ctx.fill();
+    if (txt) {
+      var mx = (a[0] + b[0]) / 2 + 8 * esc, my = (a[1] + b[1]) / 2 - 6 * esc;
+      ctx.lineWidth = 4 * esc; ctx.strokeStyle = "#000"; ctx.strokeText(txt, mx, my);
+      ctx.lineWidth = 2 * esc; ctx.fillStyle = col; ctx.fillText(txt, mx, my);
+    }
+  }
+  g.medidas.forEach(function (m) { linea(m.a, m.b, "#ff4fd8", m.txt); ctx.beginPath(); ctx.arc(m.b[0], m.b[1], 4 * esc, 0, 6.2832); ctx.fill(); });
+  if (g.p1 && g.cur) linea(g.p1, g.cur, "#ffc247", g.vivo);
+  // lupa
+  var lp = $("canvas.lupa", p), lc = lp.getContext && lp.getContext("2d");
+  if (lc && g.cur) {
+    var r = 12, x = Math.round(g.cur[0]) - r, y = Math.round(g.cur[1]) - r;
+    lp.style.display = "block"; lc.imageSmoothingEnabled = false;
+    lc.clearRect(0, 0, 25, 25); lc.drawImage(g.img, x, y, 25, 25, 0, 0, 25, 25);
+    lc.strokeStyle = "#ff3030"; lc.lineWidth = 1;
+    lc.beginPath(); lc.moveTo(12.5, 0); lc.lineTo(12.5, 25); lc.moveTo(0, 12.5); lc.lineTo(25, 12.5); lc.stroke();
+  }
+}
+
+/* ---------- actualización desde el estado del servidor ---------- */
+function ponerValor(p, nombre, valor) {
+  var i = $('[name="' + nombre + '"]', p);
+  if (!i || valor === null || valor === undefined) return;
+  if (document.activeElement === i || i.dataset.sucio === "1") return;
+  var v = String(valor);
+  if (i.value !== v) i.value = v;
+}
+
+/* ---------- piezas: biblioteca, reconocimiento y control ---------- */
+function textoVeredicto(v) {
+  if (!v) return "";
+  var t = "Veredicto: " + v.estado;
+  if (v.filas && v.filas.length) t += " — " + v.filas.map(function (f) {
+    return f.dimension + " " + num(f.medido, 3) + " (nominal " + num(f.nominal, 3) + ", error " + (f.error >= 0 ? "+" : "") + num(f.error, 3) + ")";
+  }).join("; ");
+  if (v.tol) t += " · tolerancia ±" + num(v.tol, 3);
+  return t;
+}
+
+function textoReco(r, vivo) {
+  if (!r) return vivo ? "Reconocimiento en vivo: no se ve ninguna pieza." : "Reconocimiento apagado: actívalo arriba o pulsa «Identificar ahora».";
+  var L = [];
+  if (r.estado === "reconocida") L.push("Pieza reconocida: " + r.nombre + "   (distancia " + num(r.relativa, 2) + "; el límite es 1.00)");
+  else if (r.estado === "ambigua") L.push("AMBIGUA: se parece a más de una pieza" + (r.nota ? " (" + r.nota + ")" : ""));
+  else if (r.estado === "desconocida") L.push("DESCONOCIDA: no se parece a ninguna pieza enseñada. No se carga ninguna receta.");
+  else L.push("Sin referencia: " + (r.nota || "no hay piezas enseñadas con suficientes muestras en esta cámara"));
+  if (r.candidatas && r.candidatas.length) L.push("Candidatas: " + r.candidatas.map(function (c) { return c.nombre + " (" + num(c.relativa, 2) + ")"; }).join(" · "));
+  if (r.veredicto) L.push(textoVeredicto(r.veredicto) + "   [un solo fotograma: para el veredicto formal usa Medir]");
+  if (r.n_objetos > 1) L.push("Hay " + r.n_objetos + " objetos a la vista: se identifica el mayor.");
+  return L.join("\n");
+}
+
+function textoPiezaResultado(pz) {
+  if (pz.pid) return "Pieza: " + pz.nombre + " (" + pz.origen + ")\n" + (pz.veredicto ? textoVeredicto(pz.veredicto) : "Calibra la escala para obtener el veredicto.") + (pz.aviso ? "\n⚠ " + pz.aviso + (pz.origen !== "reconocida" ? " Se usó la pieza elegida a mano." : "") : "");
+  if (pz.aviso) return "⚠ " + pz.aviso;
+  if (pz.reco) return textoReco(pz.reco, true);
+  return "";
+}
+
+function textoEval(ev) {
+  if (!ev) return "Sin evaluación todavía.";
+  var L = ["Evaluación de las " + hora(ev.t) + ":"];
+  ["geo", "cnn"].forEach(function (k) {
+    var e = ev[k]; if (!e) return;
+    L.push((k === "geo" ? "• Huella geométrica" : "• Huella de la red") + " — " + e.total + " pruebas «dejar-una-fuera»:");
+    Object.keys(e.por_pieza).forEach(function (id) {
+      var r = e.por_pieza[id]; if (r.n < 3) return;
+      var conf = Object.keys(r.confundida_con).map(function (n) { return n + " ×" + r.confundida_con[n]; }).join(", ");
+      L.push("     " + r.nombre + ": " + r.ok + "/" + r.n + " bien" + (r.desconocida ? ", " + r.desconocida + " desconocida(s)" : "") + (conf ? ", confundida con " + conf : ""));
+    });
+    if (e.separacion.length) {
+      var peor = e.separacion.slice().sort(function (a, b) { return a.dist / a.suma_radios - b.dist / b.suma_radios; })[0];
+      L.push("     Par más parecido: " + peor.a_nombre + " ↔ " + peor.b_nombre + " (separación " + num(peor.dist / peor.suma_radios, 2) + "×; debe ser mayor que 1)");
+    }
+  });
+  if (ev.avisos && ev.avisos.length) { L.push("Avisos:"); ev.avisos.forEach(function (a) { L.push("  ⚠ " + a); }); }
+  else L.push("Sin avisos: la biblioteca distingue bien las piezas enseñadas.");
+  return L.join("\n");
+}
+
+function pzFicha(p) {
+  var g = function (n) { var i = $('[name="' + n + '"]', p); return i.type === "checkbox" ? i.checked : (i.value === "" ? null : i.value); };
+  return {nombre: g("pz_nombre"), largo: g("pz_largo"), ancho: g("pz_ancho"), diametro: g("pz_diametro"), tol: g("pz_tol"),
+          altura_mm: g("pz_altura"), notas: g("pz_notas"), maestra: g("pz_maestra")};
+}
+
+function llenarFicha(p, q) {
+  var m = {pz_nombre: q ? q.nombre : "", pz_largo: q && q.largo != null ? q.largo : "", pz_ancho: q && q.ancho != null ? q.ancho : "",
+           pz_diametro: q && q.diametro != null ? q.diametro : "", pz_tol: q && q.tol != null ? q.tol : "",
+           pz_altura: q && q.altura_mm != null ? q.altura_mm : "", pz_notas: q ? (q.notas || "") : ""};
+  Object.keys(m).forEach(function (n) { var i = $('[name="' + n + '"]', p); i.value = m[n]; i.dataset.sucio = ""; });
+  var mc = $('[name="pz_maestra"]', p); mc.checked = !!(q && q.maestra); mc.dataset.sucio = "";
+}
+
+function mapearPieza(cid, c, p, acc, b) {
+  var sel = c.pzSel, z = c.datos && c.datos.piezas;
+  function sinSel() { if (!sel) { toast("Primero selecciona una pieza de la lista", "mal"); return true; } return false; }
+  function confirmar() {   // doble clic en las acciones que borran
+    if (!b.dataset.confirmar) return true;
+    if (b.dataset.armado === "1") { b.dataset.armado = ""; b.textContent = b.dataset.textoOrig; return true; }
+    b.dataset.textoOrig = b.textContent; b.dataset.armado = "1"; b.textContent = b.dataset.confirmar;
+    setTimeout(function () { if (b.dataset.armado === "1") { b.dataset.armado = ""; b.textContent = b.dataset.textoOrig; } }, 4000);
+    return false;
+  }
+  if (acc === "pieza_guardar_nueva") { var f = pzFicha(p); f.id = null; return {acc: "pieza_guardar", datos: f}; }
+  if (acc === "pieza_guardar_cambios") { if (sinSel()) return null; var f2 = pzFicha(p); f2.id = sel; return {acc: "pieza_guardar", datos: f2}; }
+  if (acc === "pieza_receta_sel") { if (sinSel()) return null; return {acc: "pieza_receta", datos: {id: sel}}; }
+  if (acc === "pieza_eliminar_sel") { if (sinSel() || !confirmar()) return null; return {acc: "pieza_eliminar", datos: {id: sel}}; }
+  if (acc === "pieza_ensenar_sel") {
+    if (sinSel()) return null;
+    var n = $('[name="pz_n"]', p).value, it = $('[name="pz_int"]', p).value;
+    return {acc: "pieza_ensenar", datos: {id: sel, n: n === "" ? null : Number(n), intervalo: it === "" ? null : Number(it)}};
+  }
+  if (acc === "pieza_borrar_muestras_sel") { if (sinSel() || !confirmar()) return null; return {acc: "pieza_borrar_muestras", datos: {id: sel}}; }
+  if (acc === "pz_cada_aplicar") return {acc: "reco_config", datos: {control_cada_h: Number($('[name="pz_cada"]', p).value || 8)}};
+  if (acc === "cnn_toggle") {
+    var on = !!(z && z.cnn && z.cnn.activo);
+    return on ? {acc: "cnn_apagar", datos: {}} : {acc: "cnn_encender", datos: {modelo: $('[name="pz_cnn_modelo"]', p).value}};
+  }
+  return {acc: acc, datos: {}};
+}
+
+async function seleccionarPieza(cid, id) {
+  var c = CAMS[cid]; c.pzSel = id; c.pzFormaId = null;
+  $(".pz-lista", c.panel).dataset.f = "";
+  await api(cid, "pieza_seleccionar", {id: id});
+  refrescar();
+}
+
+async function importarBiblioteca(cid, p, b) {
+  var f = $(".pz-archivo", p).files[0];
+  if (!f) { toast("Elige primero el archivo .zip del respaldo", "mal"); return; }
+  b.classList.add("busy"); b.disabled = true;
+  try {
+    var buf = await f.arrayBuffer();
+    var r = await (await fetch("/api/piezas/importar", {method: "POST", body: buf})).json();
+    toast(r.mensaje || r.error, r.ok === false ? "mal" : "ok");
+  } catch (e) { toast("No se pudo importar: " + e, "mal"); }
+  b.classList.remove("busy"); b.disabled = false; refrescar();
+}
+
+function nominalTxt(q) {
+  var t = q.diametro ? "Ø " + q.diametro : (q.largo ? q.largo + " × " + (q.ancho || "—") : "sin medida nominal");
+  if (q.tol) t += " · tol ±" + q.tol;
+  if (q.altura_mm != null) t += " · altura " + q.altura_mm;
+  return t + " mm";
+}
+
+function renderPiezas(p, d) {
+  var cid = p.dataset.cid, c = CAMS[cid], z = d.piezas, tab = $('.tab[data-tab="piezas"]', p);
+  var chipP = $('[data-chip="pieza"]', p), chipC = $('[data-chip="ctrl"]', p);
+  if (!z) { tab.style.display = "none"; chipP.style.display = "none"; chipC.style.display = "none"; return; }
+  tab.style.display = "";
+  var sv = $('[data-sw="reco_vivo"]', p); if (document.activeElement !== sv) sv.checked = !!z.vivo;
+  var sa = $('[data-sw="reco_auto"]', p); if (document.activeElement !== sa) sa.checked = !!z.auto;
+  var sm = $('[name="pz_modo"]', p); if (document.activeElement !== sm && sm.dataset.sucio !== "1") sm.value = z.modo;
+  ponerValor(p, "pz_cada", z.control.cada_h);
+  // selección: si el servidor la cambió (receta automática), se sigue
+  if (c.pzSelServidor !== z.sel) { c.pzSelServidor = z.sel; if (z.sel) { c.pzSel = z.sel; c.pzFormaId = null; } }
+  if (c.pzSel && !z.lista.some(function (q) { return q.id === c.pzSel; })) { c.pzSel = null; c.pzFormaId = null; }
+  var qsel = z.lista.filter(function (q) { return q.id === c.pzSel; })[0] || null;
+  if (c.pzFormaId !== c.pzSel) { llenarFicha(p, qsel); c.pzFormaId = c.pzSel; }
+  setTexto($(".pz-sel", p), qsel ? "Seleccionada: " + qsel.nombre + " — " + qsel.muestras + " muestras en ESTA cámara" + (qsel.muestras < z.min_muestras ? " (faltan " + (z.min_muestras - qsel.muestras) + " como mínimo)" : "")
+    : "Ninguna pieza seleccionada: llena el formulario y pulsa «Guardar pieza nueva», o elige una de la lista.");
+  // lista
+  var box = $(".pz-lista", p);
+  var firma = JSON.stringify([z.lista.map(function (q) { return [q.id, q.nombre, q.largo, q.ancho, q.diametro, q.tol, q.altura_mm, q.maestra, q.muestras, q.muestras_cnn, q.miniatura]; }), c.pzSel]);
+  if (box.dataset.f !== firma) {
+    box.dataset.f = firma; box.innerHTML = "";
+    if (!z.lista.length) { var vacio = document.createElement("div"); vacio.className = "ayuda"; vacio.textContent = "La biblioteca está vacía: crea la primera pieza con el formulario de abajo."; box.appendChild(vacio); }
+    z.lista.forEach(function (q) {
+      var it = document.createElement("div"); it.className = "pz-item"; it.dataset.id = q.id;
+      var elegida = q.id === c.pzSel;
+      it.style.cssText = "display:flex;gap:10px;align-items:center;padding:6px 8px;border:1px solid " + (elegida ? "#3b9cff" : "#2c3a4d") + ";border-radius:8px;margin:4px 0;cursor:pointer;background:" + (elegida ? "#1b2a3d" : "transparent");
+      if (q.miniatura) { var im = document.createElement("img"); im.src = "/piezas/" + q.id + ".jpg"; im.style.cssText = "width:56px;height:42px;object-fit:contain;background:#000;border-radius:4px"; it.appendChild(im); }
+      var tx = document.createElement("div"); tx.style.flex = "1";
+      var nom = document.createElement("div"); nom.style.fontWeight = "600"; nom.textContent = q.nombre + (q.maestra ? "   ★ maestra" : "");
+      var sub = document.createElement("div"); sub.className = "ayuda"; sub.style.margin = "0"; sub.textContent = nominalTxt(q);
+      tx.appendChild(nom); tx.appendChild(sub); it.appendChild(tx);
+      var ch = document.createElement("span"); ch.className = "chip " + (q.muestras >= 15 ? "ok" : (q.muestras >= z.min_muestras ? "av" : "mal"));
+      ch.textContent = q.muestras + " muestras" + (q.muestras_cnn ? " · red " + q.muestras_cnn : ""); it.appendChild(ch);
+      it.addEventListener("click", function () { seleccionarPieza(cid, q.id); });
+      box.appendChild(it);
+    });
+  }
+  // aprendizaje
+  var e = z.ensenanza, txt = "";
+  if (e && e.activa) {
+    txt = "Aprendiendo «" + e.nombre + "»: " + e.hechas + " de " + e.total + " muestras. Mueve y gira la pieza.";
+    var rj = Object.keys(e.rechazos || {}); if (rj.length) txt += "\nRechazadas: " + rj.map(function (k) { return k + " ×" + e.rechazos[k]; }).join("; ");
+  } else if (e && e.fin) {
+    var f = e.fin;
+    txt = "Último aprendizaje de «" + f.nombre + "»: " + f.guardadas + " de " + f.total + " muestras guardadas" + (f.cancelado ? " (cancelado)" : "") + ".";
+    var rj2 = Object.keys(f.rechazos || {}); if (rj2.length) txt += "\nRechazadas: " + rj2.map(function (k) { return k + " ×" + f.rechazos[k]; }).join("; ");
+    (f.avisos || []).forEach(function (a) { txt += "\n⚠ " + a; });
+  }
+  setTexto($(".pz-ens", p), txt);
+  // reconocimiento y evaluación
+  setTexto($(".pz-reco", p), textoReco(z.reco, z.vivo));
+  setTexto($(".pz-eval", p), textoEval(z.evaluacion));
+  // control con la maestra
+  var ct = z.control, L = [];
+  if (!ct.maestras.length) L.push("No hay piezas maestras: marca una en la biblioteca (casilla «MAESTRA»).");
+  else L.push("Maestras: " + ct.maestras.map(function (m) { return m.nombre; }).join(", ") + " · control cada " + num(ct.cada_h, 1) + " h");
+  if (ct.vencido) L.push("⚠ Control VENCIDO" + (ct.hace_h === null ? ": todavía no se ha hecho ninguno" : ": el último fue hace " + num(ct.hace_h, 1) + " h") + ". Verifica con la pieza maestra.");
+  ct.ultimos.slice().reverse().forEach(function (u) { L.push("  " + u.fecha + " · " + u.pieza + " · " + u.estado + " · error largo " + u.err_largo + (u.err_ancho ? " / ancho " + u.err_ancho : "")); });
+  setTexto($(".pz-ctrl", p), L.join("\n"));
+  // red de huellas
+  var cn = z.cnn, tg = $(".pz-cnn-toggle", p), cc = $(".pz-cnn-chip", p);
+  if (cn) {
+    tg.classList.toggle("rojo", !!cn.activo); tg.classList.toggle("verde", !cn.activo);
+    setTexto(tg, cn.activo ? "Apagar red de huellas" : "Encender red de huellas");
+    setTexto(cc, cn.activo ? "ENCENDIDA · " + cn.modelo + (cn.dim ? " · vector de " + cn.dim : "") + (cn.ultimo_ms ? " · " + Math.round(cn.ultimo_ms) + " ms" : "") : "apagada");
+    cc.className = "chip pz-cnn-chip " + (cn.activo ? "ok" : "");
+    var sel2 = $('[name="pz_cnn_modelo"]', p), f2 = JSON.stringify(cn.modelos);
+    if (sel2.dataset.firma !== f2) {
+      sel2.innerHTML = "";
+      if (!cn.modelos.length) { var o0 = document.createElement("option"); o0.value = ""; o0.textContent = "(copia un .onnx a la carpeta del programa)"; sel2.appendChild(o0); }
+      cn.modelos.forEach(function (m) { var o = document.createElement("option"); o.value = m; o.textContent = m; sel2.appendChild(o); });
+      sel2.dataset.firma = f2;
+    }
+    if (document.activeElement !== sel2 && sel2.dataset.sucio !== "1" && cn.modelo) sel2.value = cn.modelo;
+    setTexto($(".pz-cnn-aviso", p), !cn.onnxruntime ? "Falta onnxruntime en la Pi:  pip install onnxruntime --break-system-packages  (y reinicia el programa)." : (cn.error || ""));
+  }
+  // chips de la cabecera
+  if (z.vivo && z.reco && z.reco.estado !== "vacia") {
+    var r = z.reco, nok = r.veredicto && r.veredicto.estado === "NO OK";
+    setTexto(chipP, r.estado === "reconocida" ? "pieza: " + r.nombre + (r.veredicto ? " · " + r.veredicto.estado : "") : (r.estado === "ambigua" ? "pieza: ambigua" : "pieza: DESCONOCIDA"));
+    chipP.className = "chip " + (r.estado === "reconocida" ? (nok ? "mal" : "ok") : (r.estado === "ambigua" ? "av" : "mal")); chipP.style.display = "";
+  } else chipP.style.display = "none";
+  if (ct.vencido) { setTexto(chipC, "control con la maestra vencido"); chipC.style.display = ""; } else chipC.style.display = "none";
+}
+
+function redCampos(d) {
+  return {modelo: d.red_modelo, modo: d.red_modo, umbral: d.red_umbral, margen_px: d.red_margen, cada: d.red_cada};
+}
+
+function textoComparacion(c) {
+  var L = ["Comparación de las " + hora(c.t) + ", sobre una misma imagen:"];
+  c.filas.forEach(function (f) {
+    if (f.error) { L.push("• " + f.variante + ": no disponible — " + f.error); return; }
+    var objs = f.objetos.length ? f.objetos.map(function (o, i) {
+      return "#" + (i + 1) + " " + (o.tipo === "circulo" || o.tipo === "hueco" ? "Ø " + num(o.largo, 3) : num(o.largo, 3) + " × " + num(o.ancho, 3)) + " " + c.unidad;
+    }).join("; ") : "ningún objeto";
+    L.push("• " + f.variante + ": " + f.n + " objeto(s) — " + objs + " · " + num(f.ms, 0) + " ms" + (f.ms_red ? " (la red: " + num(f.ms_red, 0) + " ms)" : ""));
+  });
+  return L.join("\n");
+}
+
+function renderRed(p, d) {
+  var r = d.red, btn = $(".red-toggle", p), chip = $(".red-chip", p);
+  if (!r) { setTexto(chip, "no disponible para esta cámara"); btn.disabled = true; return; }
+  btn.classList.toggle("rojo", !!r.activa); btn.classList.toggle("verde", !r.activa);
+  setTexto(btn, r.activa ? "Apagar red" : "Encender red");
+  setTexto(chip, r.activa ? "ENCENDIDA · modo " + r.modo : "apagada (método clásico)");
+  chip.className = "chip red-chip " + (r.activa ? "ok" : "");
+  var info = [];
+  if (r.modelo) info.push("modelo: " + r.modelo);
+  if (r.ultimo_ms) info.push("última ejecución: " + Math.round(r.ultimo_ms) + " ms");
+  if (r.llamadas) info.push("ejecuciones: " + r.llamadas);
+  setTexto($(".red-datos", p), info.join(" · "));
+  var aviso = "";
+  if (!r.onnxruntime) aviso = "Falta onnxruntime en la Pi. Instálalo con:  pip install onnxruntime --break-system-packages  y reinicia el programa.";
+  else if (r.error) aviso = r.error;
+  setTexto($(".red-aviso", p), aviso);
+  var sel = $('[name="red_modelo"]', p), firma = JSON.stringify(r.modelos);
+  if (sel.dataset.firma !== firma) {
+    sel.innerHTML = "";
+    if (!r.modelos.length) { var o0 = document.createElement("option"); o0.value = ""; o0.textContent = "(ninguno: pulsa «Descargar u2netp»)"; sel.appendChild(o0); }
+    r.modelos.forEach(function (m) { var o = document.createElement("option"); o.value = m; o.textContent = m; sel.appendChild(o); });
+    sel.dataset.firma = firma;
+  }
+  if (document.activeElement !== sel && sel.dataset.sucio !== "1" && r.modelo) sel.value = r.modelo;
+  $(".red-descargar", p).style.display = r.u2netp_descargado ? "none" : "";
+  ponerValor(p, "red_modo", r.modo); ponerValor(p, "red_umbral", r.umbral); ponerValor(p, "red_margen", r.margen_px); ponerValor(p, "red_cada", r.cada);
+  var cmp = $(".red-comparacion", p);
+  if (d.comparacion && cmp.dataset.t !== String(d.comparacion.t)) { cmp.dataset.t = String(d.comparacion.t); setTexto(cmp, textoComparacion(d.comparacion)); }
+}
+
+function renderPrecision(p, d) {
+  var c = d.corr_lin;
+  setTexto($(".corr-estado", p), c && c.activa
+    ? "Corrección ACTIVA: escala " + num(c.s, 5) + " · desfase de borde " + num(c.e, 3) + " mm · " + c.n + " medidas, error típico " + num(c.rms, 3) + " mm"
+    : "Sin corrección contra patrones (las dimensiones salen sin corregir).");
+  setTexto($(".patrones-lista", p), (d.patrones || []).map(function (q, i) {
+    return "Patrón " + (i + 1) + " (" + q.tipo + "): real " + q.real.map(function (v) { return num(v, 3); }).join(" × ") +
+      " → medido " + q.med.map(function (v) { return num(v, 3); }).join(" × ") + " mm";
+  }).join("\n"));
+  var pr = d.prueba, el = $(".prueba-res", p);
+  if (!pr) { setTexto(el, "Prueba no iniciada."); return; }
+  var L = [];
+  L.push("Prueba en curso: " + pr.n + " medición(es)" + (pr.n < 10 ? " — faltan " + (10 - pr.n) + " para un resultado confiable" : "") + " · real " + num(pr.real_l, 3) + (pr.real_a ? " × " + num(pr.real_a, 3) : "") + " mm" + (pr.tol ? " · tolerancia ±" + num(pr.tol, 3) + " mm" : ""));
+  function linea(nom, e) {
+    if (!e) return;
+    var t = nom + ": media " + num(e.media, 3) + " · sesgo " + (e.sesgo >= 0 ? "+" : "") + num(e.sesgo, 3) + " mm · σ " + num(e.sd, 3) + " mm · rango " + num(e.rango, 3) + " · error máx. " + num(e.max_abs, 3);
+    if (e.pt !== undefined) t += "\n   P/T = " + num(e.pt, 1) + "% (" + e.veredicto + ") · error esperado (|sesgo| + 3σ) = " + num(e.err_esperado, 3) + " mm → " + (e.dentro ? "DENTRO" : "FUERA") + " de la tolerancia";
+    L.push(t);
+  }
+  linea("Largo", pr.largo); linea("Ancho", pr.ancho);
+  if (pr.ultimas && pr.ultimas.length) L.push("Últimas: " + pr.ultimas.map(function (m) { return num(m.l, 3); }).join(" · "));
+  setTexto(el, L.join("\n"));
+}
+
+function actualizarPanel(cid, d) {
+  var c = CAMS[cid], p = c.panel;
+  c.datos = d;
+  if (c.nombreVista !== d.nombre) { c.nombreVista = d.nombre; if (ORDEN.indexOf(cid) >= 0) construirVistas(); }
+  setTexto($(".nom", p), d.nombre || cid);
+  var bc = $(".btn-cam", p), bm = $(".btn-med", p), bk = $(".btn-color", p), enc = d.encendida !== false;
+  setTexto(bc, enc ? "Apagar cámara" : "Prender cámara"); bc.classList.toggle("rojo", enc); bc.classList.toggle("verde", !enc);
+  setTexto(bm, "Medición: " + (d.medicion ? "ON" : "OFF")); bm.classList.toggle("verde", !!d.medicion);
+  bk.style.display = d.color_soporta ? "" : "none"; setTexto(bk, "Imagen: " + (d.gris ? "GRIS" : "COLOR"));
+  $$("button[data-accion]", p).forEach(function (b) { if (MEDICION.indexOf(b.dataset.accion) >= 0) b.disabled = !d.medicion || !enc; });
+  if (!d.medicion && c.regla && c.regla.activa) cerrarRegla(cid);
+  var ce = $('[data-chip="estado"]', p);
+  var txt = d.estado === "ok" ? (d.ocupado ? "trabajando: " + d.ocupado : (d.medicion === false ? "inspección visual" : "en vivo")) : (d.estado === "abriendo" ? "abriendo…" : (d.estado === "apagada" ? "APAGADA" : d.estado === "sin_imagen" ? "SIN IMAGEN" : "ERROR"));
+  setTexto(ce, txt); ce.className = "chip " + (d.estado === "ok" ? (d.ocupado ? "av" : "ok") : ((d.estado === "error" || d.estado === "sin_imagen") ? "mal" : "av"));
+  var velo = $(".velo", p), vt = $(".velo-txt", p), vb = $(".velo-btn", p);
+  setTexto(vb, d.estado === "apagada" ? "Prender cámara" : "Reintentar abrir la cámara");
+  if (d.estado === "apagada") { velo.classList.add("on"); vt.textContent = "Cámara apagada"; vb.style.display = "inline-block"; }
+  else if (d.estado === "error" || d.estado === "sin_imagen") { velo.classList.add("on"); vt.textContent = d.error || "Error de cámara"; vb.style.display = "inline-block"; }
+  else if (d.estado === "abriendo") { velo.classList.add("on"); vt.textContent = "Abriendo la cámara…"; vb.style.display = "none"; }
+  else if (d.ocupado && ["resolucion", "exposicion", "ganancia", "reintentar", "camara"].indexOf(d.ocupado) >= 0) { velo.classList.add("on"); vt.textContent = "Reconfigurando la cámara (" + d.ocupado + ")…"; vb.style.display = "none"; }
+  else { velo.classList.remove("on"); }
+  if (d.estado !== "ok") { return; }
+  setTexto($('[data-chip="fps"]', p), num(d.fps, 1) + " fps");
+  var rs = d.resoluciones, rtxt = "";
+  if (rs && rs.tipo === "gige" && rs.lista[rs.actual]) rtxt = rs.lista[rs.actual].nombre;
+  else if (rs && rs.tipo === "csi") rtxt = rs.actual[0] + "×" + rs.actual[1];
+  else if (d.captura) rtxt = d.captura[0] + "×" + d.captura[1];
+  setTexto($('[data-chip="res"]', p), rtxt + (d.size ? " → trabajo " + d.size[0] + "×" + d.size[1] : ""));
+  var ch = $('[data-chip="escala"]', p);
+  setTexto(ch, d.escala.calibrada ? d.escala.modo : "SIN CALIBRAR"); ch.className = "chip " + (d.escala.calibrada ? "ok" : "mal");
+  var cl = $('[data-chip="lente"]', p); setTexto(cl, "lente: " + (d.lente.activa ? "corregida" : "no")); cl.className = "chip " + (d.lente.activa ? "ok" : "");
+  setTexto($('[data-chip="fondo"]', p), "fondo: " + (d.fondo === "capturado" ? "capturado" : "automático"));
+  var ca = $('[data-chip="altura"]', p);
+  if (d.altura_mm > 0 || d.h_cal > 0) {
+    var ef = d.efecto_altura_pct, fuerte = ef != null && Math.abs(ef) >= 3;
+    setTexto(ca, "altura " + num(d.altura_mm, 1) + " mm" + (d.dist.valor ? " · D " + num(d.dist.valor, 0) + " (" + d.dist.fuente + ")" : " · SIN corregir")
+      + (ef != null ? " · contorno " + (ef >= 0 ? "−" : "+") + num(Math.abs(ef), 1) + " %" : ""));
+    ca.className = "chip " + (!d.dist.valor ? "mal" : (fuerte ? "av" : "ok")); ca.style.display = ""; ca.style.cursor = "pointer";
+    ca.title = "Corrección por altura activa: el rectángulo verde es la huella real, no la silueta visible. Clic para abrir la pestaña Altura.";
+    ca.onclick = function () { var t = $('.tab[data-tab="altura"]', p); if (t) t.click(); };
+  } else { ca.style.display = "none"; }
+  // valores de los campos
+  renderPrecision(p, d);
+  var cs = $('[data-chip="seg"]', p);
+  if (d.red && d.red.activa) { setTexto(cs, "red: ON (" + d.red.modo + ")"); cs.className = "chip ok"; cs.style.display = ""; } else { cs.style.display = "none"; }
+  renderRed(p, d);
+  renderPiezas(p, d);
+  var cc = $('[data-chip="calor"]', p);
+  if (d.calentamiento && d.calentamiento.min < d.calentamiento.req) {
+    setTexto(cc, "calentando " + Math.floor(d.calentamiento.min) + "/" + Math.round(d.calentamiento.req) + " min"); cc.style.display = "";
+  } else { cc.style.display = "none"; }
+  ponerValor(p, "ref_mm", d.ref_mm); ponerValor(p, "ref_alto_mm", d.ref_alto_mm);
+  ponerValor(p, "altura_mm", d.altura_mm); ponerValor(p, "cam_dist_mm", d.dist.manual);
+  ponerValor(p, "cols", d.tablero.cols); ponerValor(p, "filas", d.tablero.filas); ponerValor(p, "lado_mm", d.tablero.lado_mm);
+  if (d.check_mm) { ponerValor(p, "check_largo", d.check_mm[0]); ponerValor(p, "check_ancho", d.check_mm[1]); }
+  ponerValor(p, "vista_ancho", d.vista.ancho); ponerValor(p, "vista_calidad", d.vista.calidad);
+  ponerValor(p, "vista_fps", d.vista.fps); ponerValor(p, "tasa", d.tasa);
+  var sw = $('[data-sw="huecos"]', p); if (sw && document.activeElement !== sw) sw.checked = !!d.huecos;
+  var sh = $('[data-sw="hires_vivo"]', p); if (sh && document.activeElement !== sh) sh.checked = !!d.hires_vivo;
+  var ss = $('[data-sw="silueta"]', p); if (ss && document.activeElement !== ss) ss.checked = !!d.silueta;
+  setTexto($(".lente-poses", p), "poses " + d.lente.poses + "/" + d.lente.necesarias);
+  setTexto($(".altura-estado", p), d.altura_mm > 0 || d.h_cal > 0
+    ? (d.dist.valor ? "Corrección ACTIVA con D = " + num(d.dist.valor, 1) + " mm (" + d.dist.fuente + ")."
+        + (d.efecto_altura_pct != null ? " El contorno verde (huella real) queda " + num(Math.abs(d.efecto_altura_pct), 1) + " % " + (d.efecto_altura_pct >= 0 ? "más adentro" : "más afuera") + " que la silueta visible. Si no es lo que esperas, revisa la altura (¿grosor real de la pieza?)." : "")
+        : "Falta la distancia lente-mesa: la altura NO se está corrigiendo.")
+    : "Sin corrección (pieza plana).");
+  // resolución
+  var gige = $$(".res-gige", p), csi = $$(".res-csi", p);
+  gige.forEach(function (e) { e.style.display = rs && rs.tipo === "gige" ? "flex" : "none"; });
+  csi.forEach(function (e) { e.style.display = rs && rs.tipo === "csi" ? "flex" : "none"; });
+  var info = $(".res-info", p);
+  if (rs && rs.tipo === "gige") {
+    var sel = $('[name="res_sel"]', p), firma = JSON.stringify(rs.lista.map(function (x) { return x.nombre; }));
+    if (sel.dataset.firma !== firma) {
+      sel.innerHTML = ""; rs.lista.forEach(function (x) { var o = document.createElement("option"); o.value = x.i; o.textContent = x.nombre; sel.appendChild(o); });
+      sel.dataset.firma = firma;
+    }
+    if (document.activeElement !== sel && sel.dataset.sucio !== "1") sel.value = String(rs.actual);
+    setTexto(info, "Sensor " + rs.sensor[0] + "×" + rs.sensor[1] + " · ROI actual " + (rs.roi ? rs.roi[2] + "×" + rs.roi[3] + " en (" + rs.roi[0] + "," + rs.roi[1] + ")" : "—") +
+      " · captura " + (d.captura ? d.captura[0] + "×" + d.captura[1] : "—") + " → trabajo " + (d.size ? d.size[0] + "×" + d.size[1] : "—"));
+    var mp = d.captura ? d.captura[0] * d.captura[1] / 1e6 : 0;
+    setTexto($(".res-aviso", p), mp > 4 && d.proc_scale < 2 ? "Captura de " + mp.toFixed(1) + " MP sin reducir: la Pi irá lenta. Prueba reducir ÷2 o ÷4." : "");
+  } else if (rs && rs.tipo === "csi") {
+    var sm = $('[name="res_modo"]', p), f2 = JSON.stringify(rs.lista.map(function (x) { return x.nombre; }));
+    if (sm.dataset.firma !== f2) {
+      sm.innerHTML = ""; rs.lista.forEach(function (x) { var o = document.createElement("option"); o.value = x.w + "x" + x.h; o.textContent = x.nombre; sm.appendChild(o); });
+      sm.dataset.firma = f2;
+    }
+    if (document.activeElement !== sm && sm.dataset.sucio !== "1") sm.value = rs.actual[0] + "x" + rs.actual[1];
+    setTexto(info, "Solo se ofrecen los modos NATIVOS del sensor (sin reescalado, más nítido). Actual: " + rs.actual[0] + "×" + rs.actual[1]);
+    setTexto($(".res-aviso", p), "");
+  } else { setTexto(info, "Esta cámara tiene resolución fija."); }
+  // exposición
+  var ex = d.exposicion || {}, card = $(".exp-card", p);
+  card.style.display = ex.soporta ? "block" : "none";
+  if (ex.soporta) {
+    ponerValor(p, "exposicion", ex.exposicion === null ? null : Math.round(ex.exposicion));
+    ponerValor(p, "ganancia", ex.ganancia === null ? null : Math.round(ex.ganancia * 100) / 100);
+    setTexto($(".exp-lim", p), ex.exp_lim ? "Exposición permitida: " + Math.round(ex.exp_lim[0]) + " – " + Math.round(ex.exp_lim[1]) + " µs · ganancia: " + ex.gan_lim[0] + " – " + ex.gan_lim[1] : "");
+  }
+  // ToF
+  var bt = $('button[data-solo="tof"]', p); bt.style.display = d.tof ? "" : "none";
+  // objetos en vivo
+  var vivo = $(".vivo", p);
+  setTexto(vivo, d.medicion === false ? "Medición apagada: solo inspección visual" : d.objetos && d.objetos.length ? d.objetos.map(function (o, i) {
+    return "#" + (i + 1) + " " + o.tipo + ": " + (o.tipo === "circulo" || o.tipo === "hueco" ? "Ø " + num(o.largo, 2) : num(o.largo, 2) + " × " + num(o.ancho, 2)) + " " + o.unidad;
+  }).join("   ·   ") : "Ningún objeto detectado");
+  // resultado (si lo tomó otra pestaña/sesión)
+  if (d.resultado && (!c.ultimoRes || c.ultimoRes !== d.resultado.t)) { c.ultimoRes = d.resultado.t; mostrarResultado(cid, d.resultado); }
+  // registro
+  var lg = $(".log", p), firmaLog = d.mensajes.length ? d.mensajes[d.mensajes.length - 1].t + ":" + d.mensajes.length : "";
+  if (lg.dataset.f !== firmaLog) {
+    lg.dataset.f = firmaLog; lg.innerHTML = "";
+    d.mensajes.slice().reverse().forEach(function (m) {
+      var di = document.createElement("div"), t = document.createElement("span");
+      t.className = "t"; t.textContent = hora(m.t) + "  "; di.appendChild(t); di.appendChild(document.createTextNode(m.texto)); lg.appendChild(di);
+    });
+  }
+}
+
+/* ---------- vistas (ambas / una) ---------- */
+function construirVistas() {
+  var cont = $("#vistas"); cont.innerHTML = "";
+  function boton(id, txt) {
+    var b = document.createElement("button");
+    b.className = "vbtn" + (VISTA === id ? " act" : ""); b.textContent = txt;
+    b.addEventListener("click", function () { VISTA = id; try { localStorage.setItem("vista", id); } catch (e) {} aplicarVista(); construirVistas(); });
+    cont.appendChild(b);
+  }
+  if (ORDEN.length > 1) boton("todas", "Ambas");
+  ORDEN.forEach(function (cid) { var d = CAMS[cid].datos; boton(cid, d && d.nombre ? d.nombre : cid); });
+}
+function aplicarVista() {
+  var unica = VISTA !== "todas" && CAMS[VISTA];
+  $("#paneles").className = unica || ORDEN.length === 1 ? "una" : "";
+  ORDEN.forEach(function (cid) { CAMS[cid].panel.classList.toggle("oculto", !!unica && cid !== VISTA); });
+}
+
+var refrescando = false;
+async function refrescar() {
+  if (refrescando) return;
+  refrescando = true;
+  try {
+    var r = await fetch("/api/estado", {cache: "no-store"});
+    var j = await r.json();
+    setTexto($("#infoSrv"), "Raspberry Pi · " + j.camaras.length + " cámara(s) · " + hora(j.hora));
+    var nuevo = false;
+    j.camaras.forEach(function (d) {
+      if (!CAMS[d.id]) {
+        CAMS[d.id] = {datos: d, panel: null};
+        CAMS[d.id].panel = crearPanel(d.id);
+        $("#paneles").appendChild(CAMS[d.id].panel);
+        ORDEN.push(d.id); nuevo = true;
+      }
+      actualizarPanel(d.id, d);
+    });
+    if (nuevo) { if (VISTA !== "todas" && !CAMS[VISTA]) VISTA = "todas"; construirVistas(); aplicarVista(); }
+  } catch (e) {
+    setTexto($("#infoSrv"), "sin conexión con la Pi…");
+  } finally { refrescando = false; }
+}
+document.addEventListener("keydown", function (ev) {
+  if (ev.key === "Escape") ORDEN.forEach(function (cid) { if (CAMS[cid].regla.activa) cerrarRegla(cid); });
+});
+async function todasCamaras(on) {
+  var rs = await Promise.all(ORDEN.map(function (cid) { return api(cid, "camara", {on: on}); }));
+  var mal = rs.filter(function (r) { return r.ok === false; });
+  toast(mal.length ? (mal[0].error || mal[0].mensaje || "No se pudo") : (on ? "Cámaras encendidas" : "Cámaras apagadas"), mal.length ? "mal" : "ok");
+  refrescar();
+}
+$("#btnTodasOn").addEventListener("click", function () { todasCamaras(true); });
+$("#btnTodasOff").addEventListener("click", function () { todasCamaras(false); });
+refrescar();
+setInterval(refrescar, 700);
+</script>
+</body>
+</html>
